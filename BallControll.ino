@@ -3,10 +3,12 @@
 #include <BLEServer.h>
 String bpress = "B0:D\n";
 // set motors
-#define PIN_IN1  19 // ESP32 pin GPIO19 connected to the IN1 pin L298N
-#define PIN_IN2  18 // ESP32 pin GPIO18 connected to the IN2 pin L298N
-#define PIN_ENA  17 // ESP32 pin GPIO17 connected to the EN1 pin L298N
-
+#define WeightPos  19
+#define WeightNeg  18
+#define WeightPWM  17 
+#define ShellPos  2 
+#define ShellNeg  1 
+#define ShellPWM  0  
 // Define UUIDs
 #define SERVICE_UUID        "FFE0"
 #define CHARACTERISTIC_UUID "FFE1"
@@ -58,16 +60,15 @@ msg = newMsg;          // update latest command
 }
 };
 void setup() {
-  pinMode(PIN_IN1, OUTPUT);
-pinMode(PIN_IN2, OUTPUT);
-pinMode(PIN_ENA, OUTPUT);
-  digitalWrite(PIN_IN1, LOW);
-  digitalWrite(PIN_IN2, LOW);
-  analogWrite(PIN_ENA, 0);
+  pinMode(WeightPos, OUTPUT);
+  pinMode(WeightNeg, OUTPUT);
+  pinMode(WeightPWM, OUTPUT);
+  pinMode(ShellPos, OUTPUT);
+  pinMode(ShellNeg, OUTPUT);
+  pinMode(ShellPWM, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(115200);
   Serial.println("Starting BLE work!");
-
   // Initialize the device
   BLEDevice::init("XIAO_ESP32C6");
 
@@ -106,6 +107,7 @@ pCharacteristic->setCallbacks(new MyCallbacks());
 
 
 void loop() {
+  digitalWrite(LED_BUILTIN, LOW);
   /*Serial.println(msg);
   Serial.println(angle);
   Serial.println(mag);
@@ -116,24 +118,68 @@ void loop() {
     } else{
       digitalWrite(LED_BUILTIN, HIGH);
     }
+
   int aMag = (int)(mag*200);
-  if((ctrlType == 'J')&&(channel == 0)){
-    if((angle >= 0)&&(angle <=180)){
-      digitalWrite(PIN_IN1, HIGH); // control the motor's direction in clockwise
-    digitalWrite(PIN_IN2, LOW);  // control the motor's direction in clockwise
-    } else {
-      digitalWrite(PIN_IN1, LOW); // control the motor's direction in clockwise
-    digitalWrite(PIN_IN2, HIGH);  // control the motor's direction in clockwise
-    }
-    analogWrite(LED_BUILTIN, (200-aMag));
-    
-    analogWrite(PIN_ENA, (aMag));
-    Serial.println(aMag);
+  if((ctrlType == 'J')&&(channel == 0)){ // weight control
+  int aMag = (int)(mag*200);
+  if ((angle>0)&&(angle<90)){
+        Serial.println("Top Right");
+    analogWrite(WeightPWM, aMag);
+    digitalWrite(WeightPos, HIGH); 
+    digitalWrite(WeightNeg, LOW); 
+  } else if ((angle>90)&&(angle<180)){
+        Serial.println("top left");
+    analogWrite(WeightPWM, aMag);
+    digitalWrite(WeightPos, HIGH); 
+    digitalWrite(WeightNeg, LOW); 
+  } else if ((angle>180)&&(angle<270)){
+        Serial.println("lower left");
+    analogWrite(WeightPWM, aMag);
+    digitalWrite(WeightPos, LOW); 
+    digitalWrite(WeightNeg, HIGH); 
+  } else if ((angle>270)&&(angle<360)) {
+        Serial.println("lower right");
+    analogWrite(WeightPWM, aMag);
+    digitalWrite(WeightPos, LOW); 
+    digitalWrite(WeightNeg, HIGH); 
+  } else if (angle == 0){
+    digitalWrite(WeightPos, HIGH); 
+    digitalWrite(WeightNeg, LOW); 
+    analogWrite(WeightPWM, aMag);
+  } else {
+    analogWrite(WeightPWM, 0);
+  }
+  
+  } else if ((ctrlType == 'J')&&(channel == 1)) { // shell controll
+      if ((angle>0)&&(angle<90)){
+        Serial.println("Top Right");
+    analogWrite(ShellPWM, aMag);
+    digitalWrite(ShellPos, HIGH); 
+    digitalWrite(ShellNeg, LOW); 
+    Serial.print(angle);
+  } else if ((angle>90)&&(angle<180)){
+        Serial.println("top left");
+    analogWrite(ShellPWM, aMag); 
+    digitalWrite(ShellPos, HIGH); 
+    digitalWrite(ShellNeg, LOW); 
+  } else if ((angle>180)&&(angle<270)){
+        Serial.println("lower left");
+    analogWrite(ShellPWM, aMag); 
+    digitalWrite(ShellPos, LOW); 
+    digitalWrite(ShellNeg, HIGH); 
+  } else if ((angle>270)&&(angle<360)) {
+        Serial.println("lower right");
+    analogWrite(ShellPWM, aMag);
+    digitalWrite(ShellPos, LOW); 
+    digitalWrite(ShellNeg, HIGH); 
+  } else if (angle == 0){
+    digitalWrite(ShellPos, HIGH); 
+    digitalWrite(ShellNeg, LOW); 
+    analogWrite(ShellPWM, aMag);
     
   } else {
-    digitalWrite(PIN_IN1, LOW);
-    digitalWrite(PIN_IN2, LOW);
-    analogWrite(PIN_ENA, 0);
+    analogWrite(ShellPWM, 0);
+  }
   }
 
 }
